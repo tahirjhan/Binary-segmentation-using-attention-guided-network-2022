@@ -187,7 +187,7 @@ class MANet(nn.Module):
         out = self.finalrelu2(out)
        # out = self.finalconv3(out)
 
-
+       # Network is updated for binary segmentation
         if self.last_activation is not None:
             out = self.last_activation(self.outc(out))
 
