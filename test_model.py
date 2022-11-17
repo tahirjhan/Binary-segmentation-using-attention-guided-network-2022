@@ -13,6 +13,7 @@ from nets.UNet_C import UNet_C
 from utils import *
 import cv2
 from nets.DDNet import DDNet
+from nets.MANet import MANet
 
 
 def show_image_with_dice(predict_save, labs, save_path):
@@ -98,6 +99,9 @@ if __name__ == '__main__':
 
     elif model_type == 'DDNet':
         model = model = DDNet()
+
+    elif model_type == 'MANet':
+        model = MANet()
 
     else: raise TypeError('Please enter a valid name for the model type')
 
