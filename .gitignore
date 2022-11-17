@@ -1,0 +1,11 @@
+.idea
+__pycache__
+*.h5
+/datasets
+/docs
+/InstrumentsSeg
+InstrumentsSeg_visualize_test
+
+
+/log/*
+!/log/README.md
