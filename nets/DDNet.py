@@ -1,9 +1,10 @@
-
 from torch import nn
 import torchvision
 import torch
 import torch.nn.functional as F
 from nets.utils import TrippleConv, multi_scale_aspp, MHSA
+from torchvision.models import resnet, densenet201
+from nets.deformable_conv import DeformConv2d
 #------------------------------------------------------------------------------
 
 class backbone(nn.Module):
@@ -11,15 +12,28 @@ class backbone(nn.Module):
         super().__init__()
 
         baselayers = torchvision.models.densenet201(pretrained=True, progress=True)
-        self.custom_model = nn.Sequential(*list(baselayers.features.children())[:-6])
+        self.custom_model = nn.Sequential(*list(baselayers.features.children())[:-7])
         #print(self.custom_model)
 
     def forward(self, input):
         output = self.custom_model(input)
         return output
 #------------------------------------------------
+class deform_block(nn.Module):
+    def __init__(self, in_c, out_c):
+        super().__init__()
+        self.deform1 = DeformConv2d(in_c, out_c, 3, padding=1, modulation=True)
+        self.bn1 = nn.BatchNorm2d(out_c)
+        self.relu = nn.ReLU()
+        self.pool = nn.MaxPool2d(2)
 
-#128, 32, 32
+    def forward(self, inputs):
+        x = self.deform1(inputs)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.pool(x)
+        return x
+#---------------------------------------------------
 class encoder_block(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -68,6 +82,7 @@ class conv_block(nn.Module):
         self.bn2 = nn.BatchNorm2d(out_c)
 
         self.relu = nn.ReLU()
+       # self.upsampling2 = nn.Upsample(size=(224, 224), mode='bilinear', align_corners=True)
 
     def forward(self, inputs):
         x = self.conv1(inputs)
@@ -80,55 +95,62 @@ class conv_block(nn.Module):
 
         return x
 ###########################################
-
 class DDNet(nn.Module):
     def __init__(self):
         super(DDNet, self).__init__()
 
         # Encoder
-        self.block1 = backbone() # [ 128, 32, 32] if one block
+        self.block1 = backbone() # torch.Size([1, 256, 64, 64])
 
         # Stream 1
-        self.e1 = encoder_block(128,256) # 256, 16, 16
-        self.e2 = encoder_block(256, 512) # 512, 8, 8
-        self.e3 = encoder_block(512, 1024) # 1024, 4, 4
+        self.e1 = encoder_block(256,256) #
+        self.e2 = encoder_block(256, 512) #
+       # self.e3 = encoder_block(512, 1024) # torch.Size([1, 1024, 8, 8])
 
         # Stream 2
+        self.e4 = deform_block(256, 256)
+        self.e5 = deform_block(256, 512)    # torch.Size([1, 1024, 16, 16])
 
 
         # Decoder
-        self.d1 = decoder_block(1024,512)  # 512, 8, 8
-        self.d2 = decoder_block(512, 256)  # 256, 16, 16
-        self.d3 = decoder_block(256, 128)  # 128, 32, 32
-        self.d4 = decoder_block(128, 64)   # 64, 64, 64
-        self.d5 = decoder_block(64, 32)    # 32, 128, 128
-        self.d6 = decoder_block(32, 16)    # 16, 256, 256
+        self.d1 = decoder_block(1024,512)  # 2048, 16, 16
+        self.d2 = decoder_block(512, 256)  # 256, 32, 32
+        self.d3 = decoder_block(256, 128)  # 128, 64, 64
+        self.d4 = decoder_block(128, 64)   # 64, 256, 256
+
 
         # Classification
-        self.outc = nn.Conv2d(16, 1, kernel_size=1, padding=0)
+        self.outc = nn.Conv2d(64, 1, kernel_size=1, padding=0)
         self.last_activation = nn.Sigmoid()
 
     def forward(self, input):
             # Encoder
-        s1 = self.block1(input)  # 128, 32, 32
+        s1 = self.block1(input)  # torch.Size([1, 256, 64, 64])
 
         # stream 1
         e1 = self.e1(s1)
         e2 = self.e2(e1)
-        encoder_out = self.e3(e2)
-        #
-        # # Decoder
+
+        # Stream 2
+        e4 = self.e4(s1)
+        e5 = self.e5(e4)
+
+        encoder_out = torch.cat((e2,e5),1)
+
+
+        # Decoder
         d1 = self.d1(encoder_out)
         d2 = self.d2(d1)
         d3 = self.d3(d2)
         d4 = self.d4(d3)
-        d5 = self.d5(d4)
-        d6 = self.d6(d5)
 
+        #
         if self.last_activation is not None:
-            logits = self.last_activation(self.outc(d6))
+            output = self.last_activation(self.outc(d4))
 
-            return logits
+        return output
+
+
 
 model = DDNet()
 input = torch.randn((1,3,256,256))
