@@ -19,6 +19,29 @@ class backbone(nn.Module):
         output = self.custom_model(input)
         return output
 #------------------------------------------------
+class dilated_block(nn.Module):
+    def __init__(self, in_c, out_c):
+        super().__init__()
+        self.convd1 = nn.Conv2d(in_channels=in_c, out_channels=out_c, kernel_size=(3, 3), stride=1, padding=2, dilation=2)
+        self.bn1 = nn.BatchNorm2d(out_c)
+        self.convd2 = nn.Conv2d(in_channels=out_c, out_channels=out_c, kernel_size=(3, 3), stride=1, padding=2, dilation=2)
+        self.bn2 = nn.BatchNorm2d(out_c)
+        self.relu = nn.ReLU()
+        self.pool = nn.MaxPool2d(2)
+
+    def forward(self, inputs):
+        x = self.convd1(inputs)
+        x = self.bn1(x)
+        x = self.relu(x)
+
+        x = self.convd2(x)
+        x = self.bn2(x)
+        x = self.relu(x)
+        x = self.pool(x)
+
+        return x
+#---------------------------------------------------
+#------------------------------------------------
 class deform_block(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
@@ -26,6 +49,7 @@ class deform_block(nn.Module):
         self.bn1 = nn.BatchNorm2d(out_c)
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2)
+
 
     def forward(self, inputs):
         x = self.deform1(inputs)
@@ -102,19 +126,23 @@ class DDNet(nn.Module):
         # Encoder
         self.block1 = backbone() # torch.Size([1, 256, 64, 64])
 
-        # Stream 1
+        # Stream 1 Classical convolution
         self.e1 = encoder_block(256,256) #
         self.e2 = encoder_block(256, 512) #
        # self.e3 = encoder_block(512, 1024) # torch.Size([1, 1024, 8, 8])
 
-        # Stream 2
+        # Stream 2 Deformable convoltion
         self.e4 = deform_block(256, 256)
         self.e5 = deform_block(256, 512)    # torch.Size([1, 1024, 16, 16])
 
 
+        # Stream 3 Dilated covolution
+        self.e6 = dilated_block(256, 256)
+        self.e7 = dilated_block(256, 512)
+
         # Decoder
-        self.d1 = decoder_block(1024,512)  # 2048, 16, 16
-        self.d2 = decoder_block(512, 256)  # 256, 32, 32
+        self.d1 = decoder_block(1536,1024)  # 2048, 16, 16
+        self.d2 = decoder_block(1024, 256)  # 256, 32, 32
         self.d3 = decoder_block(256, 128)  # 128, 64, 64
         self.d4 = decoder_block(128, 64)   # 64, 256, 256
 
@@ -130,16 +158,22 @@ class DDNet(nn.Module):
         # stream 1
         e1 = self.e1(s1)
         e2 = self.e2(e1)
-
-        # Stream 2
+        #
+        # # Stream 2 Deforbable convolution
         e4 = self.e4(s1)
         e5 = self.e5(e4)
 
+        # Stream 2 Dilated convolution
+        e6 = self.e6(s1)
+        e7 = self.e7(e6)
+
+        # Feature level fusion
         encoder_out = torch.cat((e2,e5),1)
+        encoder_out2 = torch.cat((encoder_out,e7),1)
 
 
         # Decoder
-        d1 = self.d1(encoder_out)
+        d1 = self.d1(encoder_out2)
         d2 = self.d2(d1)
         d3 = self.d3(d2)
         d4 = self.d4(d3)
@@ -156,73 +190,3 @@ model = DDNet()
 input = torch.randn((1,3,256,256))
 output = model(input)
 #print (output.shape)
-
-    #     # ******************** Encoding image ********************
-    #     #originalmodel = torchvision.models.vgg16(pretrained=True, progress=True)
-    #     #self.custom_model = nn.Sequential(*list(originalmodel.features.children())[:-21])
-    #
-    #     originalmodel = torchvision.models.densenet169(pretrained=False, progress=True)
-    #     # pretrained_model = models.vgg16(pretrained=True).features
-    #     self.custom_model = nn.Sequential(*list(originalmodel.features.children())[:-5])
-    #     self.layer1 = nn.Sequential(
-    #         nn.Conv2d(in_channels=512, out_channels=256, kernel_size=(3, 3), stride=1, padding=1),
-    #     )
-    #
-    #     self.deform1 = DeformConv2d(256, 128, 3, padding=1, modulation=True)
-    #     self.deform2 = DeformConv2d(128, 128, 3, padding=1, modulation=True)
-    #     # nn.ReLU(),
-    #     self.deform3 = DeformConv2d(256, 64, 3, padding=1, modulation=True)
-    #
-    #     # ******************** Decoding image ********************
-    #     self.deconv1 = nn.ConvTranspose2d(in_channels=64, out_channels=64, kernel_size=(3, 3), stride=2, padding=1)
-    #     self.deconv2 = nn.ConvTranspose2d(in_channels=64, out_channels=128, kernel_size=(3, 3), stride=2, padding=1)
-    #     #self.deform = DeformConv2d(256, 128, 3, padding=1, modulation=True)
-    #     self.upsampling1 = nn.Upsample(size=(128, 128), mode='bilinear', align_corners=True)
-    #
-    #     self.deconv3 = nn.ConvTranspose2d(in_channels=128, out_channels=1, kernel_size=(3, 3), stride=2, padding=1)
-    #     self.upsampling2 = nn.Upsample(size=(224, 224), mode='bilinear', align_corners=True)
-    #     self.outc = nn.Conv2d(128, 1, kernel_size=(1, 1))
-    #     self.last_activation = nn.Sigmoid()
-    #
-    #
-    #
-    # def forward(self, x):
-    #     # ******************** Initializing filters ********************
-    #     # h_filter = torch.tensor([[-1., 0., 1.],
-    #     #                 [-2., 1., 2.],
-    #     #                 [-1., 0., 1.]]).to('cuda')
-    #     # h_filter = h_filter.view(1, 1, 3, 3).repeat(256, 256, 1, 1) # convolution mask (gx)
-    #     #
-    #     # v_filter = torch.tensor([[-1., -2., -1.],
-    #     #                          [0., 0., 0.],
-    #     #                          [1., 2., 1.]]).to('cuda')
-    #     # v_filter = v_filter.view(1, 1, 3, 3).repeat(1, 1, 1, 1) # convolution mask (gy)
-    #     # ******************** Encoding image ********************
-    #     x = self.custom_model(x)
-    #     x = self.layer1(x)
-    #
-    #     deform1_x = self.deform1(x)
-    #     deform2_x = self.deform2(deform1_x)
-    #     x =  torch.cat((deform1_x,deform2_x),1)
-    #     x = self.deform3(x)
-    #     # x = self.deform3(deform2_x)
-    #
-    #
-    #
-    #     # # ******************** Decoding image ********************
-    #     x = self.deconv1(x)
-    #     x = self.deconv2(x)
-    #     # x = self.deform(x)
-    #     # x = F.conv2d(x, h_filter)
-    #
-    #     x = self.upsampling1(x)
-    #     x = self.deconv3(x)
-    #     # x = F.conv2d(x, v_filter)
-    #     x = self.upsampling2(x)
-    #     if self.last_activation is not None:
-    #         logits = self.last_activation(self.outc(x))
-    #         # print("111")
-    #     else:
-    #         logits = self.outc(x)
-    #
-    #     return logits

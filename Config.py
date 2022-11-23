@@ -15,7 +15,7 @@ cosineLR = True # whether use cosineLR or not
 n_channels = 3
 n_labels = 1
 
-epochs = 5
+epochs = 50
 #epochs = 2000
 img_size = 256
 print_frequency = 1
