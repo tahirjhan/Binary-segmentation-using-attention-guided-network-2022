@@ -83,11 +83,13 @@ class decoder_block(nn.Module):
     def __init__(self, in_c, out_c):
         super().__init__()
 
-        self.up = nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, padding=0)
-        self.conv = conv_block(out_c, out_c)
+        self.up = nn.Upsample(scale_factor=2, mode='nearest')
+       # self.up = nn.Upsample(scale_factor=2, mode='nearest', align_corners=True)
+       # self.up = nn.ConvTranspose2d(in_c, out_c, kernel_size=2, stride=2, padding=0)
+        self.conv = conv_block(in_c, out_c)
 
     def forward(self, inputs):
-        up = self.up(inputs)  # 256,16,16
+        up = self.up(inputs)
         x =self.conv(up)
 
 
@@ -119,6 +121,39 @@ class conv_block(nn.Module):
 
         return x
 ###########################################
+class ChannelAttention(nn.Module):
+    def __init__(self, in_planes, ratio=16):
+        super(ChannelAttention, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+
+        self.fc = nn.Sequential(nn.Conv2d(in_planes, in_planes // 16, 1, bias=False),
+                                nn.ReLU(),
+                                nn.Conv2d(in_planes // 16, in_planes, 1, bias=False))
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = self.fc(self.avg_pool(x))
+        max_out = self.fc(self.max_pool(x))
+        out = avg_out + max_out
+        return self.sigmoid(out)
+
+#------------------------------------------------------------------------
+class SpatialAttention(nn.Module):
+    def __init__(self, kernel_size=7):
+        super(SpatialAttention, self).__init__()
+
+        self.conv1 = nn.Conv2d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        x = torch.cat([avg_out, max_out], dim=1)
+        x = self.conv1(x)
+        return self.sigmoid(x)
+
+#------------------------------------------------------------------------
 class DDNet(nn.Module):
     def __init__(self):
         super(DDNet, self).__init__()
@@ -129,25 +164,26 @@ class DDNet(nn.Module):
         # Stream 1 Classical convolution
         self.e1 = encoder_block(256,256) #
         self.e2 = encoder_block(256, 512) #
-       # self.e3 = encoder_block(512, 1024) # torch.Size([1, 1024, 8, 8])
+        self.e3 = encoder_block(512, 1024) # torch.Size([1, 1024, 8, 8])
 
-        # Stream 2 Deformable convoltion
-        self.e4 = deform_block(256, 256)
-        self.e5 = deform_block(256, 512)    # torch.Size([1, 1024, 16, 16])
+        # # Stream 2 Dilated convoltion
+        self.e4 = dilated_block(256, 256)
+        self.e5 = dilated_block(256, 512)    # torch.Size([1, 1024, 16, 16])
+        self.e6 = dilated_block(512, 1024)
 
 
         # Stream 3 Dilated covolution
-        self.e6 = dilated_block(256, 256)
-        self.e7 = dilated_block(256, 512)
-
-        # Decoder
-        self.d1 = decoder_block(1536,1024)  # 2048, 16, 16
-        self.d2 = decoder_block(1024, 256)  # 256, 32, 32
+        # self.e6 = dilated_block(256, 256)
+        # self.e7 = dilated_block(256, 512)
+        #
+        # # Decoder
+        self.d1 = decoder_block(1024,512)  # 2048, 16, 16
+        self.d2 = decoder_block(512, 256)  # 256, 32, 32
         self.d3 = decoder_block(256, 128)  # 128, 64, 64
         self.d4 = decoder_block(128, 64)   # 64, 256, 256
-
-
-        # Classification
+        # #
+        # #
+        # # # Classification
         self.outc = nn.Conv2d(64, 1, kernel_size=1, padding=0)
         self.last_activation = nn.Sigmoid()
 
@@ -157,27 +193,27 @@ class DDNet(nn.Module):
 
         # stream 1
         e1 = self.e1(s1)
-        e2 = self.e2(e1)
+        e2 = self.e2(e1) # torch.Size([1, 512, 16, 16])
+        #e3 = self.e3(e2)
         #
-        # # Stream 2 Deforbable convolution
+        # # Stream 2 convolution
         e4 = self.e4(s1)
-        e5 = self.e5(e4)
-
-        # Stream 2 Dilated convolution
-        e6 = self.e6(s1)
-        e7 = self.e7(e6)
-
-        # Feature level fusion
+        e5 = self.e5(e4)   # torch.Size([1, 512, 16, 16])
+        #
+        # # Stream 2 Dilated convolution
+        # e6 = self.e6(s1)
+        # e7 = self.e7(e6)
+        #
+        # # Feature level fusion
         encoder_out = torch.cat((e2,e5),1)
-        encoder_out2 = torch.cat((encoder_out,e7),1)
-
-
-        # Decoder
-        d1 = self.d1(encoder_out2)
+        # encoder_out2 = torch.cat((encoder_out,e7),1)
+        #
+        #
+        # # Decoder
+        d1 = self.d1(encoder_out)
         d2 = self.d2(d1)
         d3 = self.d3(d2)
         d4 = self.d4(d3)
-
         #
         if self.last_activation is not None:
             output = self.last_activation(self.outc(d4))
@@ -189,4 +225,4 @@ class DDNet(nn.Module):
 model = DDNet()
 input = torch.randn((1,3,256,256))
 output = model(input)
-#print (output.shape)
+print (output.shape)

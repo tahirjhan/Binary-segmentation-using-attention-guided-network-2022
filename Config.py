@@ -15,19 +15,19 @@ cosineLR = True # whether use cosineLR or not
 n_channels = 3
 n_labels = 1
 
-epochs = 50
+epochs = 100
 #epochs = 2000
 img_size = 256
 print_frequency = 1
 save_frequency = 5000
 vis_frequency = 10
-early_stopping_patience = 20
+early_stopping_patience = 10
 
 pretrain = False
 #task_name = 'MoNuSeg' # GlaS MoNuSeg
 task_name = 'InstrumentsSeg'
 # task_name = 'GlaS'
-learning_rate = 1e-4
+learning_rate = 1e-2
 batch_size = 4
 
 #model_name = 'UNet'
@@ -66,4 +66,4 @@ def get_CTranS_config():
     return config
 
 # used in testing phase, copy the session name in training phase
-test_session = "Test_session_11.23_13h29"
+test_session = "Test_session_11.24_13h24"
