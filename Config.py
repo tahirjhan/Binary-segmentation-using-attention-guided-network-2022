@@ -21,13 +21,13 @@ img_size = 256
 print_frequency = 1
 save_frequency = 5000
 vis_frequency = 10
-early_stopping_patience = 10
+early_stopping_patience = 15
 
 pretrain = False
 #task_name = 'MoNuSeg' # GlaS MoNuSeg
 task_name = 'InstrumentsSeg'
 # task_name = 'GlaS'
-learning_rate = 1e-2
+learning_rate = 1e-3
 batch_size = 4
 
 #model_name = 'UNet'

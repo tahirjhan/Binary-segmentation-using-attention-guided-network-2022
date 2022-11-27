@@ -226,9 +226,13 @@ class DDNet(nn.Module):
 
         return output
 
-
+# def count_parameters(model):
+#     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 model = DDNet()
 input = torch.randn((1,3,256,256))
-output = model(input)
-#print (output.shape)
+#output = model(input)
+
+# model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+# params = sum([numpy.prod(p.size()) for p in model_parameters])
+# print(params)
