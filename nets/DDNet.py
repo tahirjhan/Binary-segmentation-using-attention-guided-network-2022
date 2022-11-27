@@ -138,7 +138,7 @@ class ChannelAttention(nn.Module):
         out = avg_out + max_out
         return self.sigmoid(out)
 
-#------------------------------------------------------------------------
+
 class SpatialAttention(nn.Module):
     def __init__(self, kernel_size=7):
         super(SpatialAttention, self).__init__()
@@ -152,10 +152,9 @@ class SpatialAttention(nn.Module):
         x = torch.cat([avg_out, max_out], dim=1)
         x = self.conv1(x)
         return self.sigmoid(x)
-
 #------------------------------------------------------------------------
 class DDNet(nn.Module):
-    def __init__(self):
+    def __init__(self, inplanes=256, planes=512):
         super(DDNet, self).__init__()
 
         # Encoder
@@ -164,18 +163,22 @@ class DDNet(nn.Module):
         # Stream 1 Classical convolution
         self.e1 = encoder_block(256,256) #
         self.e2 = encoder_block(256, 512) #
-        self.e3 = encoder_block(512, 1024) # torch.Size([1, 1024, 8, 8])
+
 
         # # Stream 2 Dilated convoltion
         self.e4 = dilated_block(256, 256)
         self.e5 = dilated_block(256, 512)    # torch.Size([1, 1024, 16, 16])
-        self.e6 = dilated_block(512, 1024)
+
+        self.ca = ChannelAttention(1024)
+        self.sa = SpatialAttention()
 
 
         # Stream 3 Dilated covolution
         # self.e6 = dilated_block(256, 256)
         # self.e7 = dilated_block(256, 512)
         #
+        # Attention mechanisms
+
         # # Decoder
         self.d1 = decoder_block(1024,512)  # 2048, 16, 16
         self.d2 = decoder_block(512, 256)  # 256, 32, 32
@@ -208,9 +211,12 @@ class DDNet(nn.Module):
         encoder_out = torch.cat((e2,e5),1)
         # encoder_out2 = torch.cat((encoder_out,e7),1)
         #
+        # Attention mechanism after feature level fusion
+        out = self.ca(encoder_out) * encoder_out
+        out = self.sa(out) * out
         #
         # # Decoder
-        d1 = self.d1(encoder_out)
+        d1 = self.d1(out)
         d2 = self.d2(d1)
         d3 = self.d3(d2)
         d4 = self.d4(d3)
@@ -225,4 +231,4 @@ class DDNet(nn.Module):
 model = DDNet()
 input = torch.randn((1,3,256,256))
 output = model(input)
-print (output.shape)
+#print (output.shape)
