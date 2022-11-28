@@ -213,7 +213,7 @@ class DDNet(nn.Module):
         #
         # Attention mechanism after feature level fusion
         out = self.ca(encoder_out) * encoder_out
-        out = self.sa(out) * out
+       # out = self.sa(out) * out
         #
         # # Decoder
         d1 = self.d1(out)
