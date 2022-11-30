@@ -66,4 +66,4 @@ def get_CTranS_config():
     return config
 
 # used in testing phase, copy the session name in training phase
-test_session = "Test_session_11.27_16h45"
+test_session = "Test_session_11.28_11h55"

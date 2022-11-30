@@ -163,11 +163,13 @@ class DDNet(nn.Module):
         # Stream 1 Classical convolution
         self.e1 = encoder_block(256,256) #
         self.e2 = encoder_block(256, 512) #
+        self.e3 = encoder_block(512, 1024)  #
 
 
         # # Stream 2 Dilated convoltion
         self.e4 = dilated_block(256, 256)
         self.e5 = dilated_block(256, 512)    # torch.Size([1, 1024, 16, 16])
+        self.e6 = dilated_block(512, 1024)
 
         self.ca = ChannelAttention(1024)
         self.sa = SpatialAttention()
@@ -180,14 +182,15 @@ class DDNet(nn.Module):
         # Attention mechanisms
 
         # # Decoder
-        self.d1 = decoder_block(1024,512)  # 2048, 16, 16
+        self.d1 = decoder_block(2048,512)  # 2048, 16, 16
         self.d2 = decoder_block(512, 256)  # 256, 32, 32
         self.d3 = decoder_block(256, 128)  # 128, 64, 64
         self.d4 = decoder_block(128, 64)   # 64, 256, 256
+        self.d5 = decoder_block(64, 32)  # 64, 256, 256
         # #
         # #
         # # # Classification
-        self.outc = nn.Conv2d(64, 1, kernel_size=1, padding=0)
+        self.outc = nn.Conv2d(32, 1, kernel_size=1, padding=0)
         self.last_activation = nn.Sigmoid()
 
     def forward(self, input):
@@ -197,32 +200,36 @@ class DDNet(nn.Module):
         # stream 1
         e1 = self.e1(s1)
         e2 = self.e2(e1) # torch.Size([1, 512, 16, 16])
-        #e3 = self.e3(e2)
+        e3 = self.e3(e2)
+        e3 = self.ca(e3) * e3
         #
         # # Stream 2 convolution
         e4 = self.e4(s1)
         e5 = self.e5(e4)   # torch.Size([1, 512, 16, 16])
+        e6 = self.e6(e5)
+        e6 = self.sa(e6) * e6
         #
         # # Stream 2 Dilated convolution
         # e6 = self.e6(s1)
         # e7 = self.e7(e6)
         #
         # # Feature level fusion
-        encoder_out = torch.cat((e2,e5),1)
+        encoder_out = torch.cat((e3,e6),1)
         # encoder_out2 = torch.cat((encoder_out,e7),1)
         #
         # Attention mechanism after feature level fusion
-        out = self.ca(encoder_out) * encoder_out
+       # out = self.ca(encoder_out) * encoder_out
        # out = self.sa(out) * out
         #
         # # Decoder
-        d1 = self.d1(out)
+        d1 = self.d1(encoder_out)
         d2 = self.d2(d1)
         d3 = self.d3(d2)
         d4 = self.d4(d3)
+        d5 = self.d5(d4)
         #
         if self.last_activation is not None:
-            output = self.last_activation(self.outc(d4))
+            output = self.last_activation(self.outc(d5))
 
         return output
 
@@ -231,7 +238,8 @@ class DDNet(nn.Module):
 
 model = DDNet()
 input = torch.randn((1,3,256,256))
-#output = model(input)
+output = model(input)
+#print(output.shape)
 
 # model_parameters = filter(lambda p: p.requires_grad, model.parameters())
 # params = sum([numpy.prod(p.size()) for p in model_parameters])
