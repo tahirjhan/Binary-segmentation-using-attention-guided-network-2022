@@ -58,8 +58,6 @@ def vis_and_save_heatmap(model, input_img, img_RGB, labs, vis_save_path, dice_pr
     dice_pred_tmp, iou_tmp = show_image_with_dice(predict_save, labs, save_path=vis_save_path+'_predict'+model_type+'.jpg')
     return dice_pred_tmp, iou_tmp
 
-
-
 if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     test_session = config.test_session
@@ -99,7 +97,7 @@ if __name__ == '__main__':
         model = UNet_C(n_channels=config.n_channels,n_classes=config.n_labels)
 
     elif model_type == 'DDNet':
-        model = model = DDNet()
+        model = DDNet()
 
     elif model_type == 'MANet':
         model = MANet()

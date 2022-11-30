@@ -15,7 +15,7 @@ cosineLR = True # whether use cosineLR or not
 n_channels = 3
 n_labels = 1
 
-epochs = 100
+epochs = 2
 #epochs = 2000
 img_size = 256
 print_frequency = 1
@@ -66,4 +66,4 @@ def get_CTranS_config():
     return config
 
 # used in testing phase, copy the session name in training phase
-test_session = "Test_session_11.28_11h55"
+test_session = "Test_session_11.30_12h56"

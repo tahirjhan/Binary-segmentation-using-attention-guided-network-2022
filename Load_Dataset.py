@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Time    : 2021/6/19 11:30 上午
-# @Author  : Haonan Wang
-# @File    : Load_Dataset.py
-# @Software: PyCharm
 import numpy as np
 import torch
 import random
@@ -114,7 +109,7 @@ class ImageToImage2D(Dataset):
         one_hot_mask: bool, if True, returns the mask in one-hot encoded form.
     """
 
-    def __init__(self, dataset_path: str, joint_transform: Callable = None, one_hot_mask: int = False, image_size: int =224) -> None:
+    def __init__(self, dataset_path: str, joint_transform: Callable = None, one_hot_mask: int = False, image_size: int =256) -> None:
         self.dataset_path = dataset_path
         self.image_size = image_size
         self.input_path = os.path.join(dataset_path, 'img')

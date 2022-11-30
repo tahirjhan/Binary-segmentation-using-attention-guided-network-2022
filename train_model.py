@@ -127,7 +127,7 @@ def main_loop(batch_size=config.batch_size, model_type='', tensorboard=True):
     #     print ("Let's use {0} GPUs!".format(torch.cuda.device_count()))
     # model = nn.DataParallel(model, device_ids=[0])
     criterion = WeightedDiceBCE(dice_weight=0.5,BCE_weight=0.5)
-    optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)  # Choose optimize
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=lr)  # Choose optimize
     if config.cosineLR is True:
         lr_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=1, eta_min=1e-4)
     else:
@@ -165,6 +165,9 @@ def main_loop(batch_size=config.batch_size, model_type='', tensorboard=True):
                 logger.info('\t Saving best model, mean dice increased from: {:.4f} to {:.4f}'.format(max_dice,val_dice))
                 max_dice = val_dice
                 best_epoch = epoch + 1
+                #----------------------
+                torch.save(model.state_dict(), checkpoint_path)  # this is taken from other example code
+                #----------------------
                 save_checkpoint({'epoch': epoch,
                                  'best_model': True,
                                  'model': model_type,
@@ -185,17 +188,18 @@ def main_loop(batch_size=config.batch_size, model_type='', tensorboard=True):
 
 
 if __name__ == '__main__':
+    checkpoint_path = "files/checkpoint.pth"
     deterministic = True
     if not deterministic:
-        cudnn.benchmark = True
+        cudnn.benchmark = True # This flag allows you to enable the inbuilt cudnn auto-tuner to find the best algorithm to use for your hardware.
         cudnn.deterministic = False
     else:
         cudnn.benchmark = False
         cudnn.deterministic = True
     random.seed(config.seed)
     np.random.seed(config.seed)
-    torch.manual_seed(config.seed)
-    torch.cuda.manual_seed(config.seed)
+    torch.manual_seed(config.seed) # Sets the seed for generating random numbers.
+    torch.cuda.manual_seed(config.seed) # Sets the seed for generating random numbers for the current GPU.
     torch.cuda.manual_seed_all(config.seed)
     if not os.path.isdir(config.save_path):
         os.makedirs(config.save_path)
