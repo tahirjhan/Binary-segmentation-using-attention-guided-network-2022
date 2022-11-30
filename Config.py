@@ -25,7 +25,7 @@ early_stopping_patience = 15
 
 pretrain = False
 #task_name = 'MoNuSeg' # GlaS MoNuSeg
-task_name = 'InstrumentsSeg'
+task_name = 'InstrumentsSeg_small'
 # task_name = 'GlaS'
 learning_rate = 1e-3
 batch_size = 4

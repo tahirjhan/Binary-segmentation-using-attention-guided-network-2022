@@ -68,7 +68,7 @@ if __name__ =="__main__":
 
         """ Reading image """
         image = cv2.imread(x, cv2.IMREAD_COLOR)  ## (512, 512, 3)
-        ## image = cv2.resize(image, size)
+        image = cv2.resize(image, size)
         x = np.transpose(image, (2, 0, 1))  ## (3, 512, 512)
         x = x / 255.0
         x = np.expand_dims(x, axis=0)  ## (1, 3, 512, 512)
@@ -78,6 +78,7 @@ if __name__ =="__main__":
 
         """ Reading mask """
         mask = cv2.imread(y, cv2.IMREAD_GRAYSCALE)  ## (512, 512)
+        original_size = mask.shape
         ## mask = cv2.resize(mask, size)
         y = np.expand_dims(mask, axis=0)  ## (1, 512, 512)
         y = y / 255.0
@@ -94,6 +95,11 @@ if __name__ =="__main__":
             total_time = time.time() - start_time
             time_taken.append(total_time)
 
+            # Resize the predicted mask
+            dsize = (original_size[0], original_size[1])
+            pred_y = cv2.resize(pred_y, dsize, interpolation=cv2.INTER_NEAREST)
+
+            # Pass to function and calculate
             score = calculate_metrics(y, pred_y)
             metrics_score = list(map(add, metrics_score, score))
             pred_y = pred_y[0].cpu().numpy()  ## (1, 512, 512)

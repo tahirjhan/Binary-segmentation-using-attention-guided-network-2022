@@ -161,7 +161,7 @@ def main_loop(batch_size=config.batch_size, model_type='', tensorboard=True):
         #       Save best model
         # =============================================================
         if val_dice > max_dice:
-            if epoch+1 > 2:
+            if epoch+1 > 1:
                 logger.info('\t Saving best model, mean dice increased from: {:.4f} to {:.4f}'.format(max_dice,val_dice))
                 max_dice = val_dice
                 best_epoch = epoch + 1
