@@ -59,7 +59,9 @@ def vis_and_save_heatmap(model, input_img, img_RGB, labs, vis_save_path, dice_pr
     return dice_pred_tmp, iou_tmp
 
 if __name__ == '__main__':
+
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    torch.cuda.empty_cache()
     test_session = config.test_session
     if config.task_name is "GlaS":
         test_num = 80
@@ -137,6 +139,11 @@ if __name__ == '__main__':
             plt.savefig(vis_path+str(i)+"_lab.jpg", dpi=300)
             plt.close()
             input_img = torch.from_numpy(arr)
+            #--------------------------------
+            # filename = vis_path+str(i)
+            # cv2.imwrite(arr, filename)
+            #--------------------------------
+
             dice_pred_t,iou_pred_t = vis_and_save_heatmap(model, input_img, None, lab,
                                                           vis_path+str(i),
                                                dice_pred=dice_pred, dice_ens=dice_ens)

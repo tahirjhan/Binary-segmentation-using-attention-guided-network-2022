@@ -15,7 +15,7 @@ cosineLR = True # whether use cosineLR or not
 n_channels = 3
 n_labels = 1
 
-epochs = 2
+epochs = 100
 #epochs = 2000
 img_size = 256
 print_frequency = 1
@@ -25,7 +25,7 @@ early_stopping_patience = 15
 
 pretrain = False
 #task_name = 'MoNuSeg' # GlaS MoNuSeg
-task_name = 'InstrumentsSeg_small'
+task_name = 'InstrumentsSeg'
 # task_name = 'GlaS'
 learning_rate = 1e-3
 batch_size = 4
@@ -38,7 +38,7 @@ model_name = 'DDNet'
 
 train_dataset = './datasets/'+ task_name+ '/Train_Folder/'
 val_dataset = './datasets/'+ task_name+ '/Val_Folder/'
-test_dataset = './datasets/'+ task_name+ '/Test_Folder/'
+test_dataset = './datasets/'+ task_name+ '/Test_Folder_512/'
 session_name       = 'Test_session' + '_' + time.strftime('%m.%d_%Hh%M')
 save_path          = task_name +'/'+ model_name +'/' + session_name + '/'
 model_path         = save_path + 'models/'
@@ -66,4 +66,4 @@ def get_CTranS_config():
     return config
 
 # used in testing phase, copy the session name in training phase
-test_session = "Test_session_11.30_12h56"
+test_session = "Test_session_12.02_04h29"
