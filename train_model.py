@@ -12,6 +12,7 @@ from nets.UNet import UNet
 from nets.UNet_C import UNet_C
 from nets.DDNet import DDNet
 from nets.MANet import MANet
+from nets.CGNet import CGNet
 from torch.utils.data import DataLoader
 import logging
 from Train_one_epoch import train_one_epoch
@@ -102,6 +103,9 @@ def main_loop(batch_size=config.batch_size, model_type='', tensorboard=True):
     elif model_type == 'MANet':
         logger.info('Training on MANet')
         model = MANet()
+    elif model_type == 'CGNet':
+        logger.info('Training on CGNet')
+        model = CGNet(3,1)
 
     elif model_type == 'UCTransNet_pretrain':
         config_vit = config.get_CTranS_config()

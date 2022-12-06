@@ -182,10 +182,10 @@ class DDNet(nn.Module):
         # Attention mechanisms
 
         # # Decoder
-        self.d1 = decoder_block(2048,1024)  # 2048, 16, 16
-        self.d2 = decoder_block(1024, 512)  # 256, 32, 32
-        self.d3 = decoder_block(512, 256)  # 128, 64, 64
-        self.d4 = decoder_block(256, 64)   # 64, 256, 256
+        self.d1 = decoder_block(2048,512)  # 2048, 16, 16
+        self.d2 = decoder_block(512, 256)  # 256, 32, 32
+        self.d3 = decoder_block(256, 128)  # 128, 64, 64
+        self.d4 = decoder_block(128, 64)   # 64, 256, 256
         self.d5 = decoder_block(64, 32)  # 64, 256, 256
         # #
         # #

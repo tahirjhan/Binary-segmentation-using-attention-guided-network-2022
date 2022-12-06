@@ -21,7 +21,7 @@ img_size = 256
 print_frequency = 1
 save_frequency = 5000
 vis_frequency = 10
-early_stopping_patience = 15
+early_stopping_patience = 20
 
 pretrain = False
 #task_name = 'MoNuSeg' # GlaS MoNuSeg
@@ -31,7 +31,8 @@ learning_rate = 1e-3
 batch_size = 4
 
 #model_name = 'UNet'
-model_name = 'DDNet'
+#model_name = 'DDNet'
+model_name = 'CGNet'
 #model_name = 'MANet'
 #model_name = 'UCTransNet'
 #model_name = 'UCTransNet_pretrain'
@@ -66,4 +67,6 @@ def get_CTranS_config():
     return config
 
 # used in testing phase, copy the session name in training phase
-test_session = "Test_session_12.02_04h29"
+#test_session = "Test_session_12.04_20h25"
+
+test_session = "Test_session_12.06_00h27"
