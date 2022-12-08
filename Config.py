@@ -32,7 +32,7 @@ batch_size = 4
 
 #model_name = 'UNet'
 #model_name = 'DDNet'
-model_name = 'CGNet'
+model_name = 'DMCSNet'
 #model_name = 'MANet'
 #model_name = 'UCTransNet'
 #model_name = 'UCTransNet_pretrain'
@@ -69,4 +69,4 @@ def get_CTranS_config():
 # used in testing phase, copy the session name in training phase
 #test_session = "Test_session_12.04_20h25"
 
-test_session = "Test_session_12.06_00h27"
+test_session = "Test_session_12.07_15h47"

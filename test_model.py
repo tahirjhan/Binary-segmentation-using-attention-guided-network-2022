@@ -14,7 +14,7 @@ from utils import *
 import cv2
 from nets.DDNet import DDNet
 from nets.MANet import MANet
-from nets.CGNet import CGNet
+from nets.DMCSNet import DMCSNet
 
 
 
@@ -101,8 +101,8 @@ if __name__ == '__main__':
 
     elif model_type == 'DDNet':
         model = DDNet()
-    elif model_type == 'CGNet':
-        model = CGNet(3,1)
+    elif model_type == 'DMCSNet':
+        model = DMCSNet()
 
     elif model_type == 'MANet':
         model = MANet()
