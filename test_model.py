@@ -102,7 +102,7 @@ if __name__ == '__main__':
     elif model_type == 'DDNet':
         model = DDNet()
     elif model_type == 'DMCSNet':
-        model = DMCSNet()
+        model = DMCSNet(768)
 
     elif model_type == 'MANet':
         model = MANet()

@@ -18,7 +18,7 @@ import logging
 from Train_one_epoch import train_one_epoch
 import Config as config
 from torchvision import transforms
-from utils import CosineAnnealingWarmRestarts, WeightedDiceBCE
+from utils import CosineAnnealingWarmRestarts, WeightedDiceBCE, WeightedDiceLoss
 
 def logger_config(log_path):
     loggerr = logging.getLogger()
@@ -105,7 +105,7 @@ def main_loop(batch_size=config.batch_size, model_type='', tensorboard=True):
         model = MANet()
     elif model_type == 'DMCSNet':
         logger.info('Training on DMCSNet')
-        model = DMCSNet()
+        model = DMCSNet(768)
 
     elif model_type == 'UCTransNet_pretrain':
         config_vit = config.get_CTranS_config()
