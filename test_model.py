@@ -17,7 +17,6 @@ from nets.MANet import MANet
 from nets.DMCSNet import DMCSNet
 
 
-
 def show_image_with_dice(predict_save, labs, save_path):
 
     tmp_lbl = (labs).astype(np.float32)
