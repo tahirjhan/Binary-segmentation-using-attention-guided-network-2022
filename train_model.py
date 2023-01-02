@@ -105,7 +105,8 @@ def main_loop(batch_size=config.batch_size, model_type='', tensorboard=True):
         model = MANet()
     elif model_type == 'DMCSNet':
         logger.info('Training on DMCSNet')
-        model = DMCSNet(768)
+        model = DMCSNet()
+        #model.apply(weights_init)
 
     elif model_type == 'UCTransNet_pretrain':
         config_vit = config.get_CTranS_config()
